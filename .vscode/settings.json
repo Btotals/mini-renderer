@@ -1,0 +1,14 @@
+{
+  "C_Cpp.configurationWarnings": "Disabled",
+  "files.associations": {
+    "*.cjson": "jsonc",
+    "*.wxss": "css",
+    "*.wxs": "javascript",
+    "*.wpy": "vue",
+    "*.cssm": "css",
+    "*.wxml": "vue-html",
+    "*.ttss": "css",
+    "vector": "cpp",
+    "iosfwd": "cpp"
+  }
+}
