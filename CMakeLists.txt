@@ -12,13 +12,13 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 aux_source_directory(src DIR_SRCS)
 
 aux_source_directory(src/canvas DIR_CANVAS)
-# aux_source_directory(src/util DIR_UTIL)
+aux_source_directory(src/util DIR_UTIL)
 aux_source_directory(src/model DIR_MODEL)
 
 add_subdirectory(src/lib/tga)
 
 add_executable(
-  MiniRenderer ${DIR_SRCS} ${DIR_CANVAS} ${DIR_MODEL}
+  MiniRenderer ${DIR_SRCS} ${DIR_CANVAS} ${DIR_MODEL} ${DIR_UTIL}
 )
 
 target_link_libraries(MiniRenderer TGA)
