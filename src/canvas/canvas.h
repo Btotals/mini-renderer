@@ -60,6 +60,13 @@ public:
                                const Vector3f& v2,
                                const Vector3f& v3,
                                const TGAColor& color);
+
+  void triangle_gouraud(Vector3i v1,
+                        Vector3i v2,
+                        Vector3i v3,
+                        float intensity0,
+                        float intensity1,
+                        float intensity2);
 };
 
 #endif  // CANVAS_H

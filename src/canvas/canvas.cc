@@ -1,7 +1,7 @@
 #include "stdlib.h"
 #include <algorithm>
 
-#include "../util/util.h"
+#include "../util/util.hpp"
 #include "canvas.h"
 
 Canvas::Canvas() {
@@ -137,8 +137,8 @@ void Canvas::triangle(Vector2i v1,
   for (int y = v1.y; y < v2.y; y++) {
     // 上半部分的 delta_y
     int segment_height = v2.y - v1.y + 1;
-    float alpha = (float)(y - v1.y) / total_height,
-          beta = (float)(y - v1.y) / segment_height;
+    float alpha = static_cast<float>(y - v1.y) / total_height,
+          beta = static_cast<float>(y - v1.y) / segment_height;
 
     Vector2i vec_v1v3 = v1 + (v3 - v1) * alpha,
              vec_v1v2 = v1 + (v2 - v1) * beta;
@@ -155,8 +155,8 @@ void Canvas::triangle(Vector2i v1,
   // 这里画下半边
   for (int y = v2.y; y <= v3.y; y++) {
     int segment_height = v3.y - v2.y + 1;
-    float alpha = (float)(y - v1.y) / total_height,
-          beta = (float)(y - v2.y) / segment_height;
+    float alpha = static_cast<float>(y - v1.y) / total_height,
+          beta = static_cast<float>(y - v2.y) / segment_height;
 
     Vector2i vec_v1v3 = v1 + (v3 - v1) * alpha,
              vec_v2v3 = v2 + (v3 - v2) * beta;
@@ -224,6 +224,74 @@ void Canvas::triangle_barycentric_3d(const Vector3f& v1,
         }
       } else {
         image_.set(p.x, p.y, color);
+      }
+    }
+  }
+}
+
+// 扫描线 + gouraud 着色
+void Canvas::triangle_gouraud(Vector3i v1,
+                              Vector3i v2,
+                              Vector3i v3,
+                              float ity0,
+                              float ity1,
+                              float ity2) {
+  if (v1.y == v2.y && v1.y == v3.y) {
+    return;  // 忽略异常情况：三点共线
+  }
+  if (v1.y > v2.y) {
+    swap(v1, v2);
+    swap(ity0, ity1);
+  }
+  if (v1.y > v3.y) {
+    swap(v1, v3);
+    swap(ity0, ity2);
+  }
+  if (v2.y > v3.y) {
+    swap(v2, v3);
+    swap(ity1, ity2);
+  }
+
+  int total_height = v3.y - v1.y;
+  for (int i = 0; i < total_height; i++) {
+    bool second_half = i > v2.y - v1.y || v2.y == v1.y;
+    int segment_height = second_half ? v3.y - v2.y : v2.y - v1.y;
+
+    float alpha = static_cast<float>(i) / total_height;
+    // be careful: with above conditions no division by zero here
+    float beta =
+      static_cast<float>(i - (second_half ? v2.y - v1.y : 0)) / segment_height;
+
+    Vector3i vec_a = v1 + Vector3f(v3 - v1) * alpha;
+    Vector3i vec_b = second_half ? v2 + Vector3f(v3 - v2) * beta :
+                                   v1 + Vector3f(v2 - v1) * beta;
+    float intensity_a = ity0 + (ity2 - ity0) * alpha;
+    float intensity_b =
+      second_half ? ity1 + (ity2 - ity1) * beta : ity0 + (ity1 - ity0) * beta;
+    if (vec_a.x > vec_b.x) {
+      swap(vec_a, vec_b);
+      swap(intensity_a, intensity_b);
+    }
+
+    for (int j = vec_a.x; j <= vec_b.x; j++) {
+      float phi = vec_b.x == vec_a.x ?
+                    1.f :
+                    static_cast<float>(j - vec_a.x) / (vec_b.x - vec_a.x);
+      Vector3i p = Vector3f(vec_a) + Vector3f(vec_b - vec_a) * phi;
+      float intensity_p = intensity_a + (intensity_b - intensity_a) * phi;
+      int idx = p.x + p.y * width_;
+
+      if (p.x >= width_ || p.y >= height_ || p.x < 0 || p.y < 0) {
+        continue;  // 有可能渲染的时候部分像素点落在图片外
+      }
+
+      if (zbuffer_state_) {
+        if (zbuffer_[idx] < p.z) {
+          zbuffer_[idx] = p.z;
+          image_.set(p.x, p.y, TGAColor(255, 255, 255) * intensity_p);
+        }
+      } else {
+        image_.set(p.x, p.y, TGAColor(255, 255, 255) * intensity_p);
       }
     }
   }
