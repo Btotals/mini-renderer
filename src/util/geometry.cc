@@ -1,5 +1,17 @@
-#include "./matrix.h"
+#include "./geometry.h"
 #include <cassert>
+
+template <>
+template <>
+Vector3<int>::Vector3(const Vector3<float>& v)
+  : x(int(v.x + .5)), y(int(v.y + .5)), z(int(v.z + .5)) {}
+template <>
+template <>
+Vector3<float>::Vector3(const Vector3<int>& v) : x(v.x), y(v.y), z(v.z) {}
+
+template <>
+Vector3<float>::Vector3(Matrix m)
+  : x(m[0][0] / m[3][0]), y(m[1][0] / m[3][0]), z(m[2][0] / m[3][0]) {}
 
 Matrix Matrix::identity(int dimensions) {
   Matrix E(dimensions, dimensions);
@@ -16,7 +28,11 @@ Matrix::Matrix()
 Matrix::Matrix(int r, int c)
   : m_(vector<Row>(r, Row(c, 0.f))), row_(r), col_(c) {}
 
-Matrix::Matrix(Vector3f v) : m_(vector<Row>(4, Row(1, 1.f))) {}
+Matrix::Matrix(Vector3f v) : m_(vector<Row>(4, Row(1, 1.f))), row_(4), col_(1) {
+  m_[0][0] = v.x;
+  m_[1][0] = v.y;
+  m_[2][0] = v.z;
+}
 
 int Matrix::nrows() {
   return row_;
@@ -31,12 +47,11 @@ Row& Matrix::operator[](const int i) {
 }
 
 Matrix Matrix::operator*(const Matrix& a) {
-  int col = a.col_;
-  assert(col_ == a.col_);
+  assert(col_ == a.row_);
 
   Matrix result(row_, a.col_);
   for (int i = 0; i < row_; i++) {
-    for (int j = 0; j < col; j++) {
+    for (int j = 0; j < a.col_; j++) {
       float sum = 0.f;
       for (int k = 0; k < col_; k++) {
         sum += m_[i][k] * a.m_[k][j];
