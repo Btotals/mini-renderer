@@ -4,6 +4,9 @@
 # Prerequisites
 *.d
 
+# outputs files
+*.tga
+
 # Compiled Object files
 *.slo
 *.lo

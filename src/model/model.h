@@ -2,7 +2,7 @@
 #define __MODEL_H__
 
 #include "../lib/tga/tga_image.h"
-#include "../util/geometry.h"
+#include "../util/geo.h"
 #include <vector>
 
 using std::string;
@@ -15,6 +15,8 @@ private:
   vector<Vector3f> norms_;
   vector<Vector2f> uv_;
   TGAImage diffusemap_;
+  TGAImage normalmap_;
+  TGAImage specularmap_;
 
 public:
   Model(const char* filename);
@@ -23,6 +25,7 @@ public:
   int nfaces();
   Vector3f norm(int iface, int nvert);
   Vector3f vert(int i);
+  Vector3f vert(int iface, int nth_vert);
   Vector2i uv(int iface, int nvert);
   TGAColor diffuse(Vector2i uv);
   vector<int> face(int idx);

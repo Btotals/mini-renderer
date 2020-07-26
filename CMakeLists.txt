@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(MiniRenderer)
+project(MiniRenderer C CXX)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
@@ -11,14 +11,14 @@ SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 aux_source_directory(src DIR_SRCS)
 
-aux_source_directory(src/canvas DIR_CANVAS)
-aux_source_directory(src/util DIR_UTIL)
+add_subdirectory(src/lib/tga)
+add_subdirectory(src/util)
+
+aux_source_directory(src/shader DIR_SHADER)
 aux_source_directory(src/model DIR_MODEL)
 
-add_subdirectory(src/lib/tga)
-
 add_executable(
-  MiniRenderer ${DIR_SRCS} ${DIR_CANVAS} ${DIR_MODEL} ${DIR_UTIL}
+  MiniRenderer ${DIR_SRCS} ${DIR_SHADER} ${DIR_MODEL}
 )
 
-target_link_libraries(MiniRenderer TGA)
+target_link_libraries(MiniRenderer TGA UTIL)

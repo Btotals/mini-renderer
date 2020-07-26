@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
-Model::Model(const char* filename) : verts_(), faces_() {
+Model::Model(const char* filename)
+  : verts_(), faces_(), norms_(), uv_(), diffusemap_(), normalmap_(),
+    specularmap_() {
   std::ifstream in;
   in.open(filename, std::ifstream::in);
   if (in.fail()) {
@@ -25,7 +27,7 @@ Model::Model(const char* filename) : verts_(), faces_() {
       iss >> trash;
       Vector3f v;
       for (int i = 0; i < 3; i++) {
-        iss >> v.raw[i];
+        iss >> v[i];
       }
       verts_.push_back(v);
     } else if (!line.compare(0, 3, "vn ")) {
@@ -57,6 +59,10 @@ Model::Model(const char* filename) : verts_(), faces_() {
   }
   std::cout << "# v# " << verts_.size() << " f# " << faces_.size() << " vt# "
             << uv_.size() << " vn# " << norms_.size() << std::endl;
+
+  load_texture(filename, "_diffuse.tga", diffusemap_);
+  load_texture(filename, "_nm.tga", normalmap_);
+  load_texture(filename, "_spec.tga", specularmap_);
 }
 
 Model::~Model() {}
@@ -80,6 +86,10 @@ vector<int> Model::face(int idx) {
 
 Vector3f Model::vert(int i) {
   return verts_[i];
+}
+
+Vector3f Model::vert(int iface, int nth_vert) {
+  return verts_[faces_[iface][nth_vert][0]];
 }
 
 void Model::load_texture(const string& filename,
