@@ -8,7 +8,7 @@
 TGAImage::TGAImage() : data(NULL), width(0), height(0), bytespp(0) {}
 
 TGAImage::TGAImage(int w, int h, int bpp)
-  : data(NULL), width(w), height(h), bytespp(bpp) {
+  : data(NULL), width(w), height(h), size(w * h), bytespp(bpp) {
   unsigned long nbytes = width * height * bytespp;
   data = new unsigned char[nbytes];
   memset(data, 0, nbytes);
@@ -17,6 +17,7 @@ TGAImage::TGAImage(int w, int h, int bpp)
 TGAImage::TGAImage(const TGAImage& img) {
   width = img.width;
   height = img.height;
+  size = width * height;
   bytespp = img.bytespp;
   unsigned long nbytes = width * height * bytespp;
   data = new unsigned char[nbytes];
@@ -34,6 +35,7 @@ TGAImage& TGAImage::operator=(const TGAImage& img) {
       delete[] data;
     width = img.width;
     height = img.height;
+    size = width * height;
     bytespp = img.bytespp;
     unsigned long nbytes = width * height * bytespp;
     data = new unsigned char[nbytes];
@@ -258,7 +260,7 @@ bool TGAImage::unload_rle_data(std::ofstream& out) {
 
 TGAColor TGAImage::get(int x, int y) {
   if (!data || x < 0 || y < 0 || x >= width || y >= height) {
-    return TGAColor();
+    return TGAColor(255, 255, 255);
   }
   return TGAColor(data + (x + y * width) * bytespp, bytespp);
 }
@@ -281,6 +283,10 @@ int TGAImage::get_width() {
 
 int TGAImage::get_height() {
   return height;
+}
+
+int TGAImage::get_size() {
+  return size;
 }
 
 bool TGAImage::flip_horizontally() {

@@ -20,7 +20,8 @@ struct TGA_Header {
 };
 #pragma pack(pop)
 
-struct TGAColor {
+class TGAColor {
+public:
   union {
     struct {
       unsigned char b, g, r, a;
@@ -44,7 +45,7 @@ struct TGAColor {
     raw[0] = v;
   }
 
-  TGAColor(int v, int bpp) : val(v), bytespp(bpp) {}
+  TGAColor(unsigned int v, int bpp) : val(v), bytespp(bpp) {}
 
   TGAColor(const TGAColor& c) : val(c.val), bytespp(c.bytespp) {}
 
@@ -54,11 +55,42 @@ struct TGAColor {
     }
   }
 
+  TGAColor operator+(TGAColor& color) const {
+    return *this + static_cast<const TGAColor&>(color);
+  }
+
+  TGAColor operator+(const TGAColor& color) const {
+    TGAColor res;
+    res.bytespp = bytespp > color.bytespp ? bytespp : color.bytespp;
+    for (int i = 0; i < 4; i++) {
+      unsigned char c = raw[i] + color.raw[i];
+      res.raw[i] = c >= 255 ? 255 : c;
+    }
+    return res;
+  }
+
+  TGAColor operator*(TGAColor& color) const {
+    return *this * static_cast<const TGAColor&>(color);
+  }
+
+  TGAColor operator*(const TGAColor& color) const {
+    TGAColor res;
+    res.bytespp = bytespp > color.bytespp ? bytespp : color.bytespp;
+    for (int i = 0; i < 4; i++) {
+      unsigned char c = raw[i] * static_cast<float>(color.raw[i]) / 255.f;
+      res.raw[i] = c;
+    }
+    return res;
+  }
+
   TGAColor operator*(float intensity) const {
-    TGAColor res = *this;
+    TGAColor res;
+    res.bytespp = bytespp;
     intensity = (intensity > 1.f ? 1.f : (intensity < 0.f ? 0.f : intensity));
-    for (int i = 0; i < 4; i++)
-      res.raw[i] = raw[i] * intensity;
+    for (int i = 0; i < 4; i++) {
+      unsigned char c = raw[i] * intensity;
+      res.raw[i] = c >= 255 ? 255 : c;
+    }
     return res;
   }
 
@@ -73,6 +105,10 @@ struct TGAColor {
     }
     return *this;
   }
+
+  static TGAColor lerp(const TGAColor& c1, const TGAColor& c2, float weight) {
+    return c1 * weight + c2 * (1 - weight);
+  }
 };
 
 typedef enum { GRAYSCALE = 1, RGB = 3, RGBA = 4 } TGAFormat;
@@ -82,6 +118,7 @@ protected:
   unsigned char* data;
   int width;
   int height;
+  int size;
   int bytespp;
 
   bool load_rle_data(std::ifstream& in);
@@ -105,6 +142,7 @@ public:
   int get_width();
   int get_height();
   int get_bytespp();
+  int get_size();
   unsigned char* buffer();
   void clear();
 };
