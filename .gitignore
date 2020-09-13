@@ -5,7 +5,7 @@
 *.d
 
 # outputs files
-output.tga
+output*.tga
 zbuffer.tga
 
 # Compiled Object files

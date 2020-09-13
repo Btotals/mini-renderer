@@ -106,17 +106,35 @@ void Model::load_texture(const string& filename,
   }
 }
 
-TGAColor Model::diffuse(Vector2i uv) {
+TGAColor Model::diffuse(Vector2f uvf) {
+  Vector2i uv(uvf[0] * diffusemap_.get_width(),
+              uvf[1] * diffusemap_.get_height());
   return diffusemap_.get(uv.x, uv.y);
 }
 
-Vector2i Model::uv(int iface, int nvert) {
-  int idx = faces_[iface][nvert][1];
-  return Vector2i(uv_[idx].x * diffusemap_.get_width(),
-                  uv_[idx].y * diffusemap_.get_height());
+Vector2f Model::uv(int iface, int nthvert) {
+  return uv_[faces_[iface][nthvert][1]];
 }
 
 Vector3f Model::norm(int iface, int nvert) {
   int idx = faces_[iface][nvert][2];
   return norms_[idx].normalize();
+}
+
+Vector3f Model::norm(Vector2f uvf) {
+  Vector2i uv(uvf[0] * normalmap_.get_width(),
+              uvf[1] * normalmap_.get_height());
+
+  TGAColor c = normalmap_.get(uv[0], uv[1]);
+  Vector3f res;
+  for (int i = 0; i < 3; i++) {
+    res[2 - i] = (float)c[i] / 255.f * 2.f - 1.f;
+  }
+  return res;
+}
+
+float Model::specular(Vector2f uvf) {
+  Vector2i uv(uvf[0] * specularmap_.get_width(),
+              uvf[1] * specularmap_.get_height());
+  return specularmap_.get(uv[0], uv[1])[0] / 1.f;
 }

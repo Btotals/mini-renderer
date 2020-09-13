@@ -24,10 +24,12 @@ public:
   int nverts();
   int nfaces();
   Vector3f norm(int iface, int nvert);
+  Vector3f norm(Vector2f uvf);
   Vector3f vert(int i);
   Vector3f vert(int iface, int nth_vert);
-  Vector2i uv(int iface, int nvert);
-  TGAColor diffuse(Vector2i uv);
+  Vector2f uv(int iface, int nvert);
+  TGAColor diffuse(Vector2f uvf);
+  float specular(Vector2f uvf);
   vector<int> face(int idx);
 
   void load_texture(const string& filename, const char* suffix, TGAImage& img);

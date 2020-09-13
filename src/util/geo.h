@@ -30,6 +30,12 @@ public:
 
 template <size_t dimension, typename T>
 std::ostream& operator<<(std::ostream& s, Vector<dimension, T>& v) {
+  s << static_cast<const Vector<dimension, T>&>(v);
+  return s;
+}
+
+template <size_t dimension, typename T>
+std::ostream& operator<<(std::ostream& s, const Vector<dimension, T>& v) {
   for (size_t i = 0; i < dimension; i++) {
     s << v[i] << " ";
   }
@@ -132,13 +138,39 @@ template <> template <> Vector<2, float>::Vector(const Vector<2, int>& v);
 template <size_t dimension, typename T>
 Vector<dimension, T> operator+(Vector<dimension, T>& v1,
                                const Vector<dimension, T>& v2) {
+  return static_cast<const Vector<dimension, T>&>(v1) + v2;
+}
+
+template <size_t dimension, typename T>
+Vector<dimension, T> operator+(const Vector<dimension, T>& v1,
+                               const Vector<dimension, T>& v2) {
   Vector<dimension, T> res;
   for (int i = dimension; i--; res[i] = v1[i] + v2[i]) {}
   return res;
 }
 
+template <size_t dimension, typename T, typename U>
+Vector<dimension, T> operator+(Vector<dimension, T>& v1,
+                               const Vector<dimension, U>& v2) {
+  return static_cast<const Vector<dimension, T>&>(v1) + v2;
+}
+
+template <size_t dimension, typename T, typename U>
+Vector<dimension, T> operator+(const Vector<dimension, T>& v1,
+                               const Vector<dimension, U>& v2) {
+  Vector<dimension, T> res;
+  for (int i = dimension; i--; res[i] = v1[i] - v2[i]) {}
+  return res;
+}
+
 template <size_t dimension, typename T>
 Vector<dimension, T> operator-(Vector<dimension, T>& v1,
+                               const Vector<dimension, T>& v2) {
+  return static_cast<const Vector<dimension, T>&>(v1) - v2;
+}
+
+template <size_t dimension, typename T>
+Vector<dimension, T> operator-(const Vector<dimension, T>& v1,
                                const Vector<dimension, T>& v2) {
   Vector<dimension, T> res;
   for (int i = dimension; i--; res[i] = v1[i] - v2[i]) {}
@@ -201,12 +233,11 @@ Vector<length, T> project(const Vector<dimension, T>& v) {
   return res;
 }
 
-// det
+// calculating det using Laplace expansion:
 template <size_t dimension, typename T> struct dt {
   static T det(const Matrix<dimension, dimension, T>& m) {
     T res = T();
-    for (size_t i = dimension; i--; res += m[0][i] * m.cofactor(0, i))
-      ;
+    for (size_t i = dimension; i--; res += m[0][i] * m.cofactor(0, i)) {}
     return res;
   }
 };
@@ -277,10 +308,10 @@ public:
    */
   Matrix<row - 1, col - 1, T> get_minor(size_t r, size_t c) const {
     Matrix<row - 1, col - 1, T> res;
-    for (size_t i = row - 1; i--;)
+    for (size_t i = row - 1; i--;) {
       for (size_t j = col - 1; j--;
-           res[i][j] = rows[i < r ? i : i + 1][j < c ? j : j + 1])
-        ;
+           res[i][j] = rows[i < r ? i : i + 1][j < c ? j : j + 1]) {}
+    }
 
     return res;
   }
@@ -293,6 +324,7 @@ public:
     return get_minor(r, c).det() * ((r + c) % 2 ? -1 : 1);
   }
 
+  // classical adjoint matrix: which is transpose of cofactor matrix
   Matrix<row, col, T> adjugate() const {
     Matrix<row, col, T> res;
     for (size_t i = row; i--;) {
@@ -315,7 +347,17 @@ public:
 
     return res / tmp;
   }
+
+  Matrix<row, col, T> invert() {
+    return invert_transpose().transpose();
+  }
 };
+
+template <size_t row, size_t col, typename T>
+Vector<row, T> operator*(Matrix<row, col, T>& lhs, Vector<col, T>& rhs) {
+  return static_cast<const Matrix<row, col, T>&>(lhs) *
+         static_cast<const Vector<col, T>&>(rhs);
+}
 
 template <size_t row, size_t col, typename T>
 Vector<row, T> operator*(Matrix<row, col, T>& lhs, const Vector<col, T>& rhs) {
@@ -334,12 +376,19 @@ Vector<row, T> operator*(const Matrix<row, col, T>& lhs,
 template <size_t row, size_t col_1, size_t col_2, typename T>
 Matrix<row, col_2, T> operator*(Matrix<row, col_1, T>& lhs,
                                 Matrix<col_1, col_2, T>& rhs) {
-  return static_cast<const Matrix<row, col_1, T>&>(lhs) * rhs;
+  return static_cast<const Matrix<row, col_1, T>&>(lhs) *
+         static_cast<const Matrix<col_1, col_2, T>&>(rhs);
 }
 
 template <size_t row, size_t col_1, size_t col_2, typename T>
 Matrix<row, col_2, T> operator*(const Matrix<row, col_1, T>& lhs,
                                 Matrix<col_1, col_2, T>& rhs) {
+  return lhs * static_cast<const Matrix<col_1, col_2, T>&>(rhs);
+}
+
+template <size_t row, size_t col_1, size_t col_2, typename T>
+Matrix<row, col_2, T> operator*(const Matrix<row, col_1, T>& lhs,
+                                const Matrix<col_1, col_2, T>& rhs) {
   Matrix<row, col_2, T> res;
   for (size_t i = row; i--;)
     for (size_t j = col_2; j--; res[i][j] = lhs[i] * rhs.column(j)) {}
@@ -348,9 +397,8 @@ Matrix<row, col_2, T> operator*(const Matrix<row, col_1, T>& lhs,
 }
 
 template <size_t row, size_t col, typename T>
-Vector<row, T> operator/(Matrix<row, col, T>& lhs, const T& rhs) {
-  for (size_t i = row; i--; lhs[i] = lhs[i] / rhs)
-    ;
+Matrix<row, col, T> operator/(Matrix<row, col, T>& lhs, const T& rhs) {
+  for (size_t i = row; i--; lhs[i] = lhs[i] / rhs) {}
 
   return lhs;
 }

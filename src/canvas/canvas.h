@@ -2,11 +2,11 @@
 #define CANVAS_H
 
 #include "../lib/tga/tga_image.h"
-#include "../util/geometry.h"
+#include "../util/geo.h"
 
 class Canvas {
 protected:
-  TGAImage image_;
+  // TGAImage image_;
   bool zbuffer_state_;
   float* zbuffer_;
 
@@ -15,6 +15,8 @@ protected:
   TGAFormat format_;
 
 public:
+  TGAImage image_;
+
   Canvas();
   Canvas(int width, int height, TGAFormat format);
 

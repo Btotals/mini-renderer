@@ -9,8 +9,8 @@ Canvas::Canvas() {
 };
 
 Canvas::Canvas(int width, int height, TGAFormat format)
-  : image_(width, height, format), width_(width), height_(height),
-    format_(format) {
+  : width_(width), height_(height), format_(format),
+    image_(width, height, format) {
   zbuffer_ = nullptr;
 }
 
@@ -91,10 +91,10 @@ void Canvas::line(int x1, int y1, int x2, int y2, const TGAColor& color) {
   }
 
   int delta_x = x2 - x1;
-  int delta_y = y2 - y1;
-  int derror2 = abs(delta_y) * 2;
+  int derror2 = abs(y2 - y1) * 2;
   int error2 = 0;
   int y = y1;
+  int y_unit = y2 > y1 ? 1 : -1;
 
   for (int x = x1; x <= x2; x++) {
     if (steep) {
@@ -105,7 +105,7 @@ void Canvas::line(int x1, int y1, int x2, int y2, const TGAColor& color) {
 
     error2 += derror2;
     if (error2 > delta_x) {
-      y += (y2 > y1 ? 1 : -1);
+      y += y_unit;
       error2 -= delta_x * 2;
     }
   }
@@ -213,8 +213,7 @@ void Canvas::triangle_barycentric_3d(const Vector3f& v1,
         continue;
       }
 
-      // 用重心坐标的三个分量分别乘以三角形三个顶点的 z 分量，求出点 p 对应的 z
-      // 深度
+      // 用重心坐标的分量分别乘以三角形三个顶点的 z 分量，求出点 p 对应的 z 深度
       float z = result.x * v1.z + result.y * v2.z + result.z * v3.z;
       int index = p.x + p.y * width_;
       if (zbuffer_state_) {

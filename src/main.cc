@@ -1,56 +1,71 @@
+#include "./canvas/canvas.h"
 #include "./shader/shader.h"
 #include "./util/string.h"
+#include "./util/transform.h"
 #include <iostream>
 
 int main(int argc, char** argv) {
-  Model* model = NULL;
-  const int width = 800;
-  const int height = 800;
+  const int width = 1200;
+  const int height = 1200;
 
-  if (2 == argc) {
-    if (endsWith(std::string(argv[1]), ".obj")) {
-      model = new Model(argv[1]);
+  vector<Model*> model_list;
+  for (int i = 1; i < argc; i++) {
+    if (endsWith(std::string(argv[i]), ".obj")) {
+      model_list.push_back(new Model(argv[i]));
     } else {
       std::cout << "file is not .obj format" << std::endl;
       return 0;
     }
-  } else {
-    std::cout << "must enter path of .obj file" << std::endl;
-    return 0;
   }
 
-  // Vector3f light_dir(1, 1, 1);
-  Vector3f eye(3, 1, 3);
-  Vector3f center(0, 0, 0);
+  Vector3f position(0, 0, 3);
+  Vector3f to(0, 0, -1);
   Vector3f up(0, 1, 0);
 
-  lookat(eye, center, up);
-  viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4, 255);
-  project(-1.f / (eye - center).length());
+  lookat(position, to, up);
+  viewport(0, 0, width, height);
 
-  // light_dir.normalize();
+  // projectOrthographic(-2, 2, -2, 2, 0.1, 10);
+  projectPerspective(45, width / height, 0.1, 10);
+
+  set_light(Vector3f(-1, -1, 0), TGAColor(255, 255, 255));
 
   TGAImage image(width, height, TGAImage::RGB);
-  TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
 
-  GouraudShader shader(model);
+  // with float32 zbuffer we could get depth in higher precise
+  // TGAImage zbuffer(width, height, TGAImage::GRAYSCALE);
+  float* zbuffer = new float[width * height];
+  float negative_max = -std::numeric_limits<float>::max();
+  for (int i = width * height; i--; zbuffer[i] = negative_max) {}
 
-  for (int i = 0; i < model->nfaces(); i++) {
-    // for (int i = 0; i < 1; i++) {
-    Vector4f screen_coords[3];
+  for (int begin = 0, end = model_list.size(); begin < end; begin++) {
+    Model* model = model_list[begin];
 
-    for (int j = 0; j < 3; j++) {
-      screen_coords[j] = shader.vertex(i, j);
+    FirstShader shader(model);
+    // GouraudShader shader(model);
+    // PhongShader shader(model);
+
+    for (int i = 0; i < model->nfaces(); i++) {
+      // for (int i = 0; i < 20; i++) {
+      Vector4f screen_coords[3];
+
+      for (int j = 0; j < 3; j++) {
+        screen_coords[j] = shader.vertex(i, j);
+      }
+      // triangle(screen_coords, shader, image, zbuffer);
+      triangle(shader.varying_pts, shader, image, zbuffer);
     }
-    triangle(screen_coords, shader, image, zbuffer);
   }
 
   image.flip_vertically();
-  zbuffer.flip_vertically();
+  // zbuffer.flip_vertically();
   image.write_tga_file("output.tga");
-  zbuffer.write_tga_file("zbuffer.tga");
+  // zbuffer.write_tga_file("zbuffer.tga");
 
-  delete model;
+  for (int begin = 0, end = model_list.size(); begin < end; begin++) {
+    delete model_list[begin];
+  }
+  delete[] zbuffer;
 
   return 0;
 }
